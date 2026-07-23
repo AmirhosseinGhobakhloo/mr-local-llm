@@ -1,0 +1,1 @@
+UPS unit providing backup power to the rack. Protects the router, switch, and server against outages.

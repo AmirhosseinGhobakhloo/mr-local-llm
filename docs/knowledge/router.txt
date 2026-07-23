@@ -1,0 +1,1 @@
+MikroTik router (RouterOS). Handles edge routing, VPN tunnels, and firewall filter rules for the internal network. Managed by Amirhossein via Winbox and SSH.

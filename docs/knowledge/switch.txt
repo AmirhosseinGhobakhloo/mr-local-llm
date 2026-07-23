@@ -1,0 +1,1 @@
+Managed network switch in the main rack. Carries VLANs for the office, lab, and server segments. Uplinked to the MikroTik router.

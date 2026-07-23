@@ -1,0 +1,15 @@
+fastapi
+
+uvicorn
+
+httpx
+
+sentence-transformers
+
+faiss-cpu
+
+ultralytics
+
+opencv-python
+
+requests

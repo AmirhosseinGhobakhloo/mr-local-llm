@@ -1,0 +1,176 @@
+# mr-local-llm
+
+### Real-Time Vision + Local RAG + LLM Pipeline  
+**Offline Object-Aware Knowledge Overlay for Interactive / Mixed-Reality Style Interfaces**
+
+[![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)]()
+[![FastAPI](https://img.shields.io/badge/FastAPI-AI%20Service-009688.svg)]()
+[![YOLOv8](https://img.shields.io/badge/Vision-YOLOv8-orange.svg)]()
+[![RAG](https://img.shields.io/badge/RAG-FAISS%20%2B%20Canonical-purple.svg)]()
+[![LLM](https://img.shields.io/badge/LLM-Ollama%20(Qwen2.5)-green.svg)]()
+[![Go](https://img.shields.io/badge/Gateway-Go-00ADD8.svg)]()
+[![Mode](https://img.shields.io/badge/Mode-Fully%20Local%20%2F%20Offline-critical.svg)]()
+
+---
+
+## Abstract
+
+`mr-local-llm` is an **end-to-end, fully local** system that connects **computer vision**, **retrieval-augmented generation (RAG)**, and a **local large language model** into a single real-time pipeline.
+
+A webcam frame is analyzed by **YOLOv8**. Each detected object label is resolved against a private knowledge base using a **two-tier hybrid RAG** strategy. A local LLM (**Ollama + Qwen2.5**) then produces a **short, grounded natural-language description**, which is overlaid on the live video stream.
+
+The system is designed as a practical foundation for **HCI / Mixed Reality research prototypes**:  
+objects in the physical world become entry points to **controlled, private, on-device knowledge**—without cloud APIs and without unconstrained hallucination.
+
+---
+
+## Why this project matters
+
+| Challenge | How this system addresses it |
+|-----------|------------------------------|
+| Cloud LLM dependency | Fully offline (Ollama + local embeddings) |
+| Hallucinated object descriptions | **Grounded prompting**: if RAG hits, LLM may use *only* retrieved context |
+| Noisy vision labels vs. documents | Hybrid retrieval: **canonical filename match** + **semantic FAISS fallback** |
+| Real-time UX blocked by slow LLM | Multi-threaded vision loop + TTL cache |
+| Enterprise / research separation of concerns | FastAPI AI service + optional Go reverse-proxy gateway |
+
+This is not a single script demo. It is a **layered architecture** suitable for lab demos, interview technical deep-dives, and extension toward wearable / MR interfaces.
+
+---
+
+## Key features
+
+- **Real-time object detection** with Ultralytics YOLOv8
+- **Hybrid RAG**
+  1. **Canonical retrieval** — deterministic map from label → `docs/knowledge/<label>.txt`
+  2. **Semantic retrieval** — FAISS (`IndexFlatIP`) + Sentence-Transformers (`all-MiniLM-L6-v2`)
+  3. Label aliases for robust matching (e.g. phone / cell phone / smartphone)
+- **Local LLM generation** via Ollama (`qwen2.5:3b`) with low temperature for stability
+- **Grounded response policy** to prioritize knowledge files over model priors
+- **Concurrent vision pipeline** (capture / inference / API fetch isolation + locks)
+- **Response cache with TTL** to protect FPS and avoid API spam
+- **Optional Go gateway** as a clean edge entrypoint (validation + reverse proxy)
+- **Private-by-design**: no external LLM vendor required at runtime
+- **Edge-aware label placement for stable UI**
+  - Bounding-box captions are clamped so labels remain **inside the visible frame**
+  - Even when an object is only partially visible (near image borders), the name/label does **not** clip off-screen
+  - Improves readability and keeps the overlay usable for live demos and MR-style interfaces
+
+---
+## System architecture
+```text
+┌──────────────┐     labels      ┌──────────────────────────────┐
+│   Webcam     │ ──────────────► │  vision/detect_live_info.py  │
+│  (OpenCV)    │                 │  YOLOv8 + UI overlay         │
+└──────────────┘                 └──────────────┬───────────────┘
+│ HTTP POST {message: label}
+▼
+┌──────────────┐   optional    ┌────────────────────────────────┐
+│  gateway     │ ────────────► │  ai-service (FastAPI :8000)    │
+│  (Go :8080)  │  reverse      │                                │
+└──────────────┘  proxy        │  rag.py  → hybrid retrieval    │
+│  llm_client.py → Ollama        │
+└──────────────┬─────────────────┘
+│
+┌────────────────────┼────────────────────┐
+▼                    ▼                    ▼
+docs/knowledge/*.txt   FAISS vectors      Ollama Qwen2.5
+(source of truth)      (semantic)         (local LLM)
+
+### Runtime data flow (one detection)
+
+1. YOLO detects an object → raw label (e.g. `cell phone`)
+2. Vision client sends **only the label** to `/chat` (critical for deterministic RAG hits)
+3. RAG resolves label:
+   - exact/canonical document stem first
+   - otherwise semantic search above similarity threshold
+4. If context exists → **hard-grounded prompt** (use only retrieved text)
+5. LLM returns 1–2 sentences
+6. Overlay is drawn on the frame; result is cached (~TTL) per label
+
+---
+
+## Technology stack
+
+| Layer | Technology | Role |
+|-------|------------|------|
+| Vision | OpenCV, Ultralytics YOLOv8 | Capture, detect, render |
+| API | FastAPI, Uvicorn | AI microservice |
+| Retrieval | FAISS, Sentence-Transformers | Hybrid RAG |
+| Generation | Ollama + Qwen2.5:3b | Local NL explanation |
+| Edge / proxy | Go (`net/http`) | Optional gateway |
+| Knowledge | Plaintext domain files | Controllable ground truth |
+| Concurrency | Python threads + locks | Real-time responsiveness |
+
+---
+
+## Repository structure
+
+text
+mr-local-llm/
+├── ai-service/
+│   ├── main.py           # FastAPI app, grounded prompt policy
+│   ├── rag.py            # Hybrid RAG engine (canonical + FAISS)
+│   └── llm_client.py     # Async Ollama client
+├── vision/
+│   └── detect_live_info.py  # Live camera pipeline + overlay
+├── gateway/
+│   └── main.go           # Reverse proxy + payload validation
+├── docs/
+│   └── knowledge/        # Domain knowledge (.txt per concept/object)
+├── .gitignore
+└── README.md
+
+> Model weights (e.g. `yolov8n.pt`) and virtualenvs are intentionally **not** versioned.
+
+---
+
+## Prerequisites
+
+- Python **3.10+**
+- [Ollama](https://ollama.com) installed and running
+- Webcam
+- (Optional) Go 1.21+ for the gateway
+- Git
+
+Pull the local model once:
+
+bash
+ollama pull qwen2.5:3b
+
+---
+
+## Setup
+
+### 1) Clone
+
+bash
+git clone https://github.com/<YOUR_USERNAME>/mr-local-llm.git
+cd mr-local-llm
+
+### 2) Python environment
+
+bash
+python -m venv .venv
+
+# Windows
+.venv\Scripts\activate
+
+# Linux / macOS
+source .venv/bin/activate
+
+pip install -r requirements.txt
+
+> If `requirements.txt` is split per module, install dependencies for `ai-service` and `vision` accordingly  
+> (FastAPI, uvicorn, httpx, ultralytics, opencv-python, sentence-transformers, faiss-cpu, …).
+
+### 3) Knowledge base
+
+Add grounded facts as plain text files:
+
+text
+docs/knowledge/cell phone.txt
+docs/knowledge/laptop.txt
+docs/knowledge/keyboard.txt
+
+File stem ≈ YOLO label (lowercase). This 

@@ -1,0 +1,1 @@
+External keyboard at the main workstation. Primary input device for coding the Go gateway.

@@ -1,0 +1,1 @@
+Rack server hosting internal services, including the offline AI stack: Ollama, FastAPI RAG engine, and the Go gateway.

@@ -1,0 +1,1 @@
+َAmirhossein’s research laptop. Runs the full offline stack: Ollama with qwen2.5:3b, the FastAPI RAG engine, and the Go gateway on port 8080.

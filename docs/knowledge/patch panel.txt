@@ -1,0 +1,1 @@
+Patch panel in the main rack. Cat6 cabling labeled per office room; documented in the network map.

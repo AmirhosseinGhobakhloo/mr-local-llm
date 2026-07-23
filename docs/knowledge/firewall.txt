@@ -1,0 +1,1 @@
+Perimeter firewall appliance. Enforces zone-based policies, NAT, and IPS between LAN, DMZ, and WAN. Part of Amirhossein’s network security infrastructure.
