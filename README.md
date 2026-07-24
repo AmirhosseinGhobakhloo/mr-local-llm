@@ -71,7 +71,7 @@ This is not a single-script demo. It is a **layered architecture** suitable for 
 │  (Go :8080)  │  reverse      │                                │
 └──────────────┘  proxy        │  rag.py  → hybrid retrieval    │
                                │  llm_client.py → Ollama        │
-└────────────────────────────┬──────────────────────────────────┘
+                               └───────────────┬────────────────┘
 │
 ┌────────────────────────────────────┼──────────────────────────────────┐
 ▼                                    ▼                                  ▼
