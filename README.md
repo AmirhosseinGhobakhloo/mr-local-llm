@@ -314,7 +314,7 @@ The same service boundary (`/chat` + RAG policy) can later feed AR headsets, spa
 ## Author
 
 **Amirhossein Ghobakhloo**  
-Systems / HPC background · Offline AI systems · Enterprise hybrid RAG · HCI/MR-oriented prototypes
+Networks and Systems / HPC background · Offline AI systems · Enterprise hybrid RAG · HCI/MR-oriented prototypes
 
 Project: local vision–language knowledge overlay (`mr-local-llm`)
 
